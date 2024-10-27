@@ -6,6 +6,7 @@ import math
 from math import exp
 from torch.autograd import Variable
 from skimage.metrics import peak_signal_noise_ratio as compare_psnr
+from skimage.metrics import structural_similarity as compare_ssim
 
 
 def weights_init_kaiming(m):
@@ -19,6 +20,22 @@ def weights_init_kaiming(m):
         m.weight.data.normal_(mean=0, std=math.sqrt(2./9./64.)).clamp_(-0.025, 0.025)
         nn.init.constant(m.bias.data, 0.0)
 
+def batch_PSNR(img, imclean, data_range):
+    Img = img.data.cpu().numpy().astype(np.float32)
+    Iclean = imclean.data.cpu().numpy().astype(np.float32)
+    PSNR = 0
+    for i in range(Img.shape[0]):
+        PSNR += compare_psnr(Iclean[i, :, :, :], Img[i, :, :, :], data_range=data_range)
+        # PSNR += compare_psnr(Iclean, Img, data_range=data_range)
+    return (PSNR/Img.shape[0])
+
+def batch_SSIM(img, imclean, data_range):
+    Img = img.data.cpu().numpy().astype(np.float32)
+    Iclean = imclean.data.cpu().numpy().astype(np.float32)
+    SSIM = 0
+    for i in range(Img.shape[0]):
+        SSIM += compare_ssim(Iclean[i, :, :, :], Img[i, :, :, :], data_range=data_range, channel_axis=0)
+    return (SSIM/Img.shape[0])
 
 class PSNR(nn.Module):
     def __init__(self, maxi=1):
@@ -30,17 +47,6 @@ class PSNR(nn.Module):
         rmse = (imdff ** 2).mean().sqrt()
         ps = 20 * torch.log10(self.MAX / rmse)
         return ps
-
-
-def batch_PSNR(img, imclean, data_range):
-    Img = img.data.cpu().numpy().astype(np.float32)
-    Iclean = imclean.data.cpu().numpy().astype(np.float32)
-    PSNR = 0
-    for i in range(Img.shape[0]):
-        PSNR += compare_psnr(Iclean[i, :, :, :], Img[i, :, :, :], data_range=data_range)
-        # PSNR += compare_psnr(Iclean, Img, data_range=data_range)
-    return (PSNR/Img.shape[0])
-
 
 def gaussian(window_size, sigma):
     gauss = torch.Tensor([exp(-(x - window_size // 2) ** 2 / float(2 * sigma ** 2)) for x in range(window_size)])
