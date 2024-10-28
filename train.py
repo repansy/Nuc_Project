@@ -22,12 +22,12 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 parser = argparse.ArgumentParser(description="DnCNN")
 parser.add_argument("--preprocess", type=bool, default=False, help='run prepare_data or not')    # False
-parser.add_argument("--batchSize", type=int, default=128, help="Training batch size")       # 128
+parser.add_argument("--batchSize", type=int, default=64, help="Training batch size")       # 128
 parser.add_argument("--num_of_layers", type=int, default=17, help="Number of total layers")
 parser.add_argument("--epochs", type=int, default=30, help="Number of training epochs")     # 50
 parser.add_argument("--milestone", type=int, default=30, help="When to decay learning rate; should be less than epochs")
 parser.add_argument("--lr", type=float, default=1e-3, help="Initial learning rate")
-parser.add_argument("--outf", type=str, default="/root/Nuc_Project/logs", help='path of log files')
+parser.add_argument("--outf", type=str, default="Nuc_Project/logs", help='path of log files')
 parser.add_argument("--mode", type=str, default="S", help='with known noise level (S) or blind training (B)')
 parser.add_argument("--noiseL", type=float, default=25, help='noise level; ignored when mode=B')
 parser.add_argument("--val_noiseL", type=float, default=25, help='noise level used on validation set')
@@ -284,7 +284,8 @@ def FPNR_train():
             
             # results
             model.eval()
-            out_train = torch.clamp(imgn_train-model(imgn_train), 0., 1.)
+            _, _, out_train = model(imgn_train)
+            # out_train = torch.clamp(imgn_train-model(imgn_train), 0., 1.)
             psnr_train = batch_PSNR(out_train, img_train, 1.)
             ssim_train = batch_SSIM(out_train, img_train, 1.)      
             print("[epoch %d][%d/%d] loss: %.4f PSNR_train: %.4f SSIM_train: %.4f" %
@@ -337,6 +338,6 @@ def FPNR_train():
             last_val = psnr_val
         
 if __name__ == '__main__':
-    DCNN_train()     # batchsize:256
-    # FPNR_train()   # 
+    # DCNN_train()     # batchsize:128
+    FPNR_train()     # batchsize:64 
     # SWIR_train()   # batchsize:32
